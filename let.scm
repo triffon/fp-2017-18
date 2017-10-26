@@ -1,0 +1,21 @@
+(define (sq x) (* x x))
+
+(define (dist x1 y1 x2 y2)
+  (let ((dx (- x2 x1))
+        (dy (- y2 y1)))
+    (sqrt (+ (sq dx) (sq dy)))))
+
+(define (area x1 y1 x2 y2 x3 y3)
+  (let ((a (dist x1 y1 x2 y2))
+        (b (dist x1 y1 x3 y3))
+        (c (dist x2 y2 x3 y3)))
+    (let ((p (/ (+ a b c) 2)))
+      (sqrt (* p (- p a) (- p b) (- p c))))))
+
+(define (area x1 y1 x2 y2 x3 y3)
+  (letrec ((p (/ (+ a b c) 2))
+           (a (dist x1 y1 x2 y2))
+        (b (dist x1 y1 x3 y3))
+        (c (dist x2 y2 x3 y3))
+        )
+    (sqrt (* p (- p a) (- p b) (- p c)))))
