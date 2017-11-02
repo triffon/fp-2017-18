@@ -43,6 +43,8 @@
 ;   (accumulate (lambda (a b) (+ a (/ (* b x) i))) 0 1 n (lambda (i) (/ 1 i))
 ;              (lambda (i) (+ i 1))))
 
+(define (n+ n)
+  (lambda (i) (+ i n)))
 
 
 
@@ -58,3 +60,45 @@
   (and (> n 1)
        (not (exists 2 (sqrt n) divisor?))))
 
+(define (derive f dx)
+  (lambda (x)
+    (/ (- (f (+ x dx)) (f x)) dx)))
+
+(define (square x) (* x x))
+
+(define (repeated f n)
+  (lambda (x)
+    (if (= n 0) x
+        (f ((repeated f (- n 1)) x)))))
+
+(define (twice f) (repeated f 2))
+
+(define (compose f g) (lambda (x) (f (g x))))
+
+(define (repeated f n)
+  (if (= n 0) id
+      (compose f (repeated f (- n 1)))))
+
+(define (repeated f n)
+  (accumulate compose id 1 n (lambda (i) f) 1+))
+  ;(accumulate *       1 1 n (lambda (i) x) 1+))
+
+(define (derive-n f n dx)
+  (if (= n 0) f
+      (derive (derive-n f (- n 1) dx) dx)))
+
+(define (derive-n f n dx)
+  ((repeated (lambda (g) (derive g dx)) n) f))
+
+(define (derive-n f n dx)
+  ((accumulate compose id 1 n (lambda (i)
+                                (lambda (g) (derive g dx))) 1+) f))
+
+
+(define lambda-#t (lambda (x y) x))
+(define lambda-#f (lambda (x y) y))
+(define (lambda-if b x y) ((b x y)))
+
+; (lambda-if lambda-#t (+ 5 3) (/ 4 0))
+
+(lambda-if lambda-#t (lambda () (+ 5 3)) (lambda () (/ 4 0)))
