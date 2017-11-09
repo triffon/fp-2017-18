@@ -141,3 +141,46 @@
   (foldr op nv (map term (collect a b next))))
 
 (define dl '((1 (2)) (((3) 4) (5 (6)) () (7)) 8))
+
+(define (atom? x) (not (pair? x)))
+
+(define (count-atoms l)
+  (cond ((null? l) 0)
+        ((atom? l) 1)
+        (else (+ (count-atoms (car l)) (count-atoms (cdr l))))))
+
+(define (flatten l)
+  (cond ((null? l) '())
+        ((atom? l) (list l))
+        (else (append (flatten (car l)) (flatten (cdr l))))))
+
+;;(define (reverse l)
+;;  (if (null? l) l
+;;      (rcons (car l) (reverse (cdr l)))))
+
+
+(define (deep-reverse l)
+  (cond ((null? l) '())
+        ((atom? l) l)
+        (else (rcons (deep-reverse (car l)) (deep-reverse (cdr l)) ))))
+
+(define (deep-fold nv term l)
+  (cond ((null? l) nv)
+        ((atom? l) (term l))
+        (else (op (deep-fold nv term (car l))
+                  (deep-fold nv term (cdr l))))))
+
+(define (deep-fold nv term op l)
+  (foldr op nv (map (lambda (x)
+                      (if (and (atom? x) (not (null? x)))
+                          (term x)
+                          (deep-fold nv term op x)))) l))
+
+(define (append . l)
+  (if (null? l) '()
+      (let ((l1 (car l)))
+        (if (null? l1) (apply append (cdr l))
+            (cons (car l1)
+                  (apply append (cons (cdr l1) (cdr l))))))))
+
+(define (evali x) (eval x (interaction-environment)))
