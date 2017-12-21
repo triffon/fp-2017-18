@@ -1,17 +1,18 @@
+{-# LANGUAGE DeriveFoldable #-}
 module Kontrolno where
 
-import Data.List
-import Control.Monad
+import Data.List (transpose, nub)
+import Control.Monad (join, liftM2)
 
-middle1 [] = "-1"
+middle1 []  = "-1"
 middle1 [x] = [x]
-middle1 l = middle1 $ init $ tail l
+middle1 l   = middle1 $ init $ tail l
 middleDigit :: Int -> Int
 middleDigit = read . middle1 . show
 
-middle2 [x] = "-1"
+middle2 [x]   = "-1"
 middle2 [x,y] = [x,y]
-middle2 l = middle2 $ init $ tail l
+middle2 l     = middle2 $ init $ tail l
 middleDigits :: Int -> Int
 middleDigits = read . middle2 . show
 
@@ -19,46 +20,45 @@ middleDigits = read . middle2 . show
 countCols = length . filter (join $ elem . (/2) . sum) . transpose
 
 -- liftM2 h f g x = h (f x) (g x)
+twoRows :: Ord a => [[a]] -> Bool
 twoRows  = liftM2 (>) (maximum . fst) (minimum . snd) . unzip .
            map (liftM2 (,) minimum maximum)
 
 mapsTo f l1 l2 = all ((`elem` l2) . f) l1
 -- mapsTo = flip . (all .) . flip ((.) . flip elem)
-isEm l op f = mapsTo f l l && and [ f x` op` f y == f (x `op` y) | x <- l, y <- l ]
+isEm l op f = mapsTo f l l &&
+              and [ f x` op` f y == f (x `op` y) | x <- l, y <- l ]
 
 isSur l1 l2 f = mapsTo f l1 l2 && all ((`any` l1) . (. f) . (==)) l2
 
-data BinaryTree a = Empty | Node a (BinaryTree a) (BinaryTree a) deriving (Eq,Show)
-leaf = (`join` Empty) . Node
-root (Node x _ _) = x
+data BinaryTree a = Empty | Node a (BinaryTree a) (BinaryTree a)
+                  deriving (Eq,Show,Foldable)
 
-inTree _ Empty = False
-inTree x (Node y l r) = x == y || inTree x l || inTree x r
-
-nodes Empty = 0
-nodes (Node x l r) = 1 + nodes l + nodes r
+root = foldr (const . Just) Nothing
 
 cousins _ Empty = 0
 cousins x (Node _ l r)
-  | root l == x || root r == x    = 0
-  | inTree x l                    = cousins x l + succs r
-  | inTree x r                    = succs l + cousins x r
-  | otherwise                     = 0
-   where succs t = max 0 (nodes t - 1)
+  | root l == Just x   = 0
+  | root r == Just x   = 0
+  | x `elem` l         = cousins x l + succs r
+  | x `elem` r         = succs l + cousins x r
+  | otherwise          = 0
+   where succs = max 0 . subtract 1 . length
 
-cut Empty        = Empty
-cut (Node x _ _) = leaf x
+cut = foldr (const . leaf) Empty
 
 family (Node x l r) = Node x (cut l) (cut r)
 
 families Empty          = []
 families t@(Node _ l r) = family t:families l ++ families r
 
-hasDuplicates []     = False
-hasDuplicates (x:xs) = x `elem` xs || hasDuplicates xs
+hasDuplicates :: Eq a => [a] -> Bool
+hasDuplicates = liftM2 (/=) id nub
 
-familiesAlike :: (Eq a) => BinaryTree a -> Bool
+familiesAlike :: Eq a => BinaryTree a -> Bool
 familiesAlike = hasDuplicates . families
+
+leaf = (`join` Empty) . Node
 
 genTree x y
  | x == y    = leaf x
@@ -84,4 +84,3 @@ tests = and [
   not $ familiesAlike testTree1,
   familiesAlike testTree2
   ]
-  
