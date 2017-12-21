@@ -37,8 +37,7 @@ sumDivisorsDivides n m = sumDivisors `divisibleBy` m
                 maybeI = if n `divisibleBy` i then i else 0
 
 derive :: Double -> (Double -> Double) -> Double -> Double
-derive dx f = df
-  where df x = (f (x + dx) - f x) / dx
+derive dx f x = (f (x + dx) - f x) / dx
 
 myDerive = derive 0.0001
 
