@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFoldable #-}
-module Kontrolno where
+module MidtermTest where
 
 import Data.List (transpose, nub)
 import Control.Monad (join, liftM2)
