@@ -16,8 +16,8 @@ middle2 l     = middle2 $ init $ tail l
 middleDigits :: Int -> Int
 middleDigits = read . middle2 . show
 
--- join f x = f x x
-countCols = length . filter (join $ elem . (/2) . sum) . transpose
+-- (f =<< g) x = f (g x) x
+countCols = length . filter (elem =<< (/2) . sum) . transpose
 
 -- liftM2 h f g x = h (f x) (g x)
 twoRows :: Ord a => [[a]] -> Bool
@@ -53,11 +53,12 @@ families Empty          = []
 families t@(Node _ l r) = family t:families l ++ families r
 
 hasDuplicates :: Eq a => [a] -> Bool
-hasDuplicates = liftM2 (/=) id nub
+hasDuplicates = (/=) =<< nub
 
 familiesAlike :: Eq a => BinaryTree a -> Bool
 familiesAlike = hasDuplicates . families
 
+-- join f x = f x x
 leaf = (`join` Empty) . Node
 
 genTree x y
