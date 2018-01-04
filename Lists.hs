@@ -4,13 +4,15 @@ import Data.List hiding (fst, snd, enumFromTo, enumFromThenTo,
                        length, (++), reverse, (!!), elem, head, tail, null,
                        init, last, take, drop, splitAt,
                        maximum, minimum, sum, product, and, or, concat,
-                       map, filter, foldr)
+                       map, filter, foldr, foldl, foldr1, foldl1, scanr, scanl,
+                       zip, unzip, zipWith, takeWhile, dropWhile, span, all, any)
 
 import Prelude hiding (fst, snd, enumFromTo, enumFromThenTo,
                        length, (++), reverse, (!!), elem, head, tail, null,
                        init, last, take, drop, splitAt,
                        maximum, minimum, sum, product, and, or, concat,
-                       map, filter, foldr)
+                       map, filter, foldr, foldl, foldr1, foldl1, scanr, scanl,
+                       zip, unzip, zipWith, takeWhile, dropWhile, span, all, any)
 
 fst (x,_) = x
 snd (_,y) = y
@@ -84,7 +86,8 @@ reverse (x:xs) = reverse xs ++ [x]
 -}
 
 --reverse = foldr (\x r -> r ++ [x]) []
-reverse = foldr (\x -> (++[x])) []
+--reverse = foldr (\x -> (++[x])) []
+reverse = foldl (flip (:)) []
 
 {-
 reverse l = iter [] l
@@ -97,6 +100,8 @@ reverse l = iter [] l
   where iter r []     = r
         iter r (x:xs) = iter (x:r) xs
 -}
+
+
 {-
 l !! 0 = head l
 l !! n = tail l !! (n - 1)
@@ -237,9 +242,6 @@ map f l = [ f x | x <- l ]
 filter p l = [ x | x <- l, p x]
 -}
 
-foldr _  nv []     = nv
-foldr op nv (x:xs) = x `op` foldr op nv xs
-
 -- pairs l1 l2 = [(x,y) | x <- l1, y <- l2]
 pairs l1 l2 = concatMap (\x -> map (\y -> (x,y)) l2) l1
 triplets l1 l2 l3 = concatMap (\x -> concatMap (\y -> map (\z -> (x,y,z)) l3) l2) l1
@@ -263,3 +265,80 @@ filter p (x:xs)
 --filter p = foldr (\x r -> if p x then x:r else r) []
 filter p = foldr (\x -> if p x then (x:) else id) []
 
+foldr1 :: (a -> a -> a) -> [a] -> a
+foldr1 _  [x]    = x
+foldr1 op (x:xs) = x `op` (foldr1 op xs)
+
+foldl1 :: (a -> a -> a) -> [a] -> a
+foldl1 op (x:xs) = foldl op x xs
+
+
+foldr _  nv []     = nv
+foldr op nv (x:xs) = x `op` foldr op nv xs
+
+scanr :: (a -> b -> b) -> b -> [a] -> [b]
+{-
+scanr _  nv []     = [nv]
+scanr op nv (x:xs) = x `op` r:rs
+  where rs@(r:_) = scanr op nv xs
+-}
+scanr op nv = foldr (\x rs@(r:_) -> x `op` r:rs) [nv]
+
+foldl :: (b -> a -> b) -> b -> [a] -> b
+foldl _  nv []     = nv
+foldl op nv (x:xs) = foldl op (nv `op` x) xs
+
+scanl :: (b -> a -> b) -> b -> [a] -> [b]
+scanl _  nv []     = [nv]
+scanl op nv (x:xs) = nv:scanl op (nv `op` x) xs
+
+-- (f . g) x = f (g x) 
+scanl2 op nv = reverse . foldl (\rs@(r:_) x -> x `op` r:rs) [nv]
+
+{-
+zip [] _          = []
+zip _ []          = []
+zip (x:xs) (y:ys) = (x,y):zip xs ys
+-}
+
+zipWith _ [] _          = []
+zipWith _ _ []          = []
+zipWith op (x:xs) (y:ys) = x `op` y:zipWith op xs ys
+
+zip = zipWith (,)
+
+-- zipWith --> map^2
+
+unzip :: [(a,b)] -> ([a],[b])
+-- unzip l = (map fst l, map snd l)
+{-
+unzip []          = ([],[])
+unzip ((x,y):xys) = (x:xs,y:ys)
+  where (xs,ys) = unzip xys
+-}
+
+unzip = foldr (\(x,y) (xs,ys) -> (x:xs,y:ys)) ([],[])
+
+-- TODO
+-- superMap :: ([a] -> b) -> [[a]] -> [b]
+-- superMap f ([[x1,x2,x3,...,xn],[y1,y2,y3,...,yn],...,[z1,z2,z3,...,zn]]) -->
+--      [f [x1,y1,...,z1], f [x2,y2,...,z2], ...., f [xn,yn,...,zn]]
+
+{-
+takeWhile _ [] = []
+takeWhile p (x:xs)
+ | p x       = x:takeWhile p xs
+ | otherwise = []
+-}
+
+takeWhile p = foldr (\x r -> if p x then x:r else []) []
+
+dropWhile _ [] = []
+dropWhile p (x:xs)
+ | p x       = dropWhile p xs
+ | otherwise = x:xs
+
+span p l = (takeWhile p l, dropWhile p l)
+
+all p = and . map p
+any p = or  . map p
