@@ -24,4 +24,24 @@ pythagoreanTriples = [ (x, y, z) | z <- [1..], x <- [1..z], y <- [1..x],
 
 triplets = iterate (map (+3)) [3,2,1]
 
-concatTriplets = foldl (++) [] triplets
+concatTriplets = foldr (++) [] triplets
+
+-- sublist n m l = take m (drop n l)
+
+-- sublist n m = take m . drop n
+
+-- flip f x y = f y x
+sublist = (.) (flip take) . flip drop
+
+-- on f g x y = f (g x) (g y)
+
+-- comp f g x y = f (g x y)
+
+-- comp f g = (f .) . g
+
+f x = f $! (1 - x)
+
+
+fakeseq x y = y
+
+-- ($!) = ap seq
