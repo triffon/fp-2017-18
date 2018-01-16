@@ -3,6 +3,7 @@ module MidtermTest where
 
 import Data.List (transpose, nub)
 import Control.Monad (join, liftM2)
+import Data.Function (on)
 
 middle1 []  = "-1"
 middle1 [x] = [x]
@@ -20,16 +21,32 @@ middleDigits = read . middle2 . show
 countCols = length . filter (elem =<< (/2) . sum) . transpose
 
 -- liftM2 h f g x = h (f x) (g x)
-twoRows :: Ord a => [[a]] -> Bool
-twoRows  = liftM2 (>) (maximum . fst) (minimum . snd) . unzip .
-           map (liftM2 (,) minimum maximum)
+twoRows :: (Ord a) => [[a]] -> Bool
+twoRows  = liftM2 (>) (maximum . map minimum) (minimum . map maximum)
 
-mapsTo f l1 l2 = all ((`elem` l2) . f) l1
--- mapsTo = flip . (all .) . flip ((.) . flip elem)
-isEm l op f = mapsTo f l l &&
-              and [ f x` op` f y == f (x `op` y) | x <- l, y <- l ]
+-- (f .* g) x y = f (g x y)
+(.*) = (.) . (.)
 
-isSur l1 l2 f = mapsTo f l1 l2 && all ((`any` l1) . (. f) . (==)) l2
+subset :: (Eq a) => [a] -> [a] -> Bool
+subset = all . flip elem
+
+mapsTo, mapsFrom :: (Eq a) => (a -> a) -> [a] -> [a] -> Bool
+mapsTo = flip subset .* map
+mapsFrom = subset .* map
+
+-- liftM2_2 h f g x y = h (f x y) (g x y)
+liftM2_2 :: (a -> b -> c) -> (d -> e -> a) -> (d -> e -> b) -> d -> e -> c
+liftM2_2 = liftM2 . liftM2
+
+-- liftM2_3 h f g x y z = h (f x y z) (g x y z)
+liftM2_3 :: (a -> b -> c) -> (d -> e -> f -> a) -> (d -> e -> f -> b) -> d -> e -> f -> c
+liftM2_3 = liftM2 . liftM2_2
+
+isEm f l op = mapsTo f l l && and [ f x `op` f y == f (x `op` y) | x <- l, y <- l ]
+                           -- ((`all` l) . liftM2_2 (==) (op `on` f) (f .* op)) `all` l
+
+isSur :: (Eq a) => (a -> a) -> [a] -> [a] -> Bool
+isSur = liftM2_3 (&&) mapsTo mapsFrom
 
 data BinaryTree a = Empty | Node a (BinaryTree a) (BinaryTree a)
                   deriving (Eq,Show,Foldable)
@@ -70,6 +87,7 @@ testTree1 = genTree 0 14
 testTree2 = Node 1 (Node 2 (Node 3 (leaf 5) Empty) (leaf 4))
                    (Node 6 (Node 2 (leaf 3) (Node 4 Empty (leaf 7))) Empty)
 
+
 tests = and [
   middleDigit 452 == 5,
   middleDigit 4712 == -1,
@@ -77,8 +95,8 @@ tests = and [
   middleDigits 4712 == 71,
   countCols [[1,2,3,6],[2,3,4,2],[3,4,5,4]] == 2,
   twoRows   [[1,2,3],[2,3,4],[3,4,5],[6,5,4]],
-  isEm [0,1,4,6] (+) (`mod` 3),
-  isSur [0,1,-1,2] [0,1,4] (^2),
+  isEm (`mod` 3) [0,1,4,6] (+),
+  isSur (^2) [0,1,-1,2] [0,1,4],
   cousins 0 testTree1 == 8,
   cousins 1 testTree1 == 6,
   cousins 3 testTree1 == 0,
