@@ -179,7 +179,7 @@ clone t x y = Node x (mapTree (+y) t) (mapTree (+y) t)
 
 foldrTree :: (a -> b -> b) -> b -> BinTree a -> b
 foldrTree _  nv Empty        = nv
-foldrTree op nv (Node x l r) = foldrTree op (x `op` (foldrTree op nv r)) l
+foldrTree op nv (Node x l r) = foldrTree op (x `op` foldrTree op nv r) l
 
 -- b = [a]
 nodes = foldrTree (:) []
